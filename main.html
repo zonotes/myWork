@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital Clock</title>
+    <title>Digital & Analog Clock</title>
     <style>
         body {
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
@@ -14,31 +15,142 @@
             color: #61dafb;
             font-family: 'Courier New', Courier, monospace;
             margin: 0;
+            gap: 40px;
         }
-        .clock {
-            font-size: 5rem;
-            border: 5px solid #61dafb;
-            padding: 20px;
+
+        /* 디지털 시계 스타일 */
+        .digital-clock {
+            font-size: 3rem;
+            border: 3px solid #61dafb;
+            padding: 15px 30px;
             border-radius: 10px;
-            box-shadow: 0 0 20px rgba(97, 218, 251, 0.5);
+            box-shadow: 0 0 15px rgba(97, 218, 251, 0.5);
+            background: rgba(0, 0, 0, 0.2);
+        }
+        
+        /* 아날로그 시계 스타일 */
+        .analog-clock {
+            width: 250px;
+            height: 250px;
+            border: 6px solid #61dafb;
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 0 0 25px rgba(97, 218, 251, 0.4);
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .hand {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            transform-origin: bottom center;
+            background-color: #61dafb;
+            border-radius: 4px;
+            z-index: 10;
+        }
+        
+        .hour {
+            width: 8px;
+            height: 60px;
+            margin-left: -4px; /* 너비의 절반만큼 왼쪽으로 이동하여 중앙 정렬 */
+            background-color: #fff;
+        }
+        
+        .minute {
+            width: 6px;
+            height: 90px;
+            margin-left: -3px;
+            background-color: #61dafb;
+        }
+        
+        .second {
+            width: 2px;
+            height: 100px;
+            margin-left: -1px;
+            background-color: #ff4757;
+            z-index: 20;
+        }
+        
+        .center-dot {
+            width: 16px;
+            height: 16px;
+            background-color: #fff;
+            border-radius: 50%;
+            position: absolute;
+            z-index: 30;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+
+        /* 시계 눈금 (선택 사항) */
+        .marker {
+            position: absolute;
+            width: 2px;
+            height: 10px;
+            background-color: rgba(97, 218, 251, 0.5);
+            top: 5px;
+            left: 50%;
+            transform-origin: 50% 120px; /* 시계 반지름 - top 여백 */
         }
     </style>
 </head>
 <body>
-    <div class="clock" id="clock">00:00:00</div>
+    <!-- 아날로그 시계 -->
+    <div class="analog-clock">
+        <div class="hand hour" id="hour-hand"></div>
+        <div class="hand minute" id="minute-hand"></div>
+        <div class="hand second" id="second-hand"></div>
+        <div class="center-dot"></div>
+        <!-- 눈금 생성은 JS로 하거나 생략 가능하지만, 깔끔하게 JS로 추가 가능 -->
+    </div>
+
+    <!-- 디지털 시계 -->
+    <div class="digital-clock" id="digital-clock">00:00:00</div>
 
     <script>
+        // 시계 눈금 동적 생성 (12개)
+        const clockFace = document.querySelector('.analog-clock');
+        for (let i = 0; i < 12; i++) {
+            const marker = document.createElement('div');
+            marker.classList.add('marker');
+            marker.style.height = i % 3 === 0 ? '15px' : '10px'; // 3, 6, 9, 12시는 좀 더 길게
+            marker.style.width = i % 3 === 0 ? '4px' : '2px';
+            marker.style.marginLeft = i % 3 === 0 ? '-2px' : '-1px';
+            marker.style.transform = `rotate(${i * 30}deg)`;
+            marker.style.transformOrigin = `center 125px`; // 반지름 크기 (border 포함 대략적인 값)
+            clockFace.appendChild(marker);
+        }
+
         function updateClock() {
             const now = new Date();
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const seconds = String(now.getSeconds()).padStart(2, '0');
-            const timeString = `${hours}:${minutes}:${seconds}`;
-            document.getElementById('clock').textContent = timeString;
+            
+            // 디지털 시계
+            const hoursStr = String(now.getHours()).padStart(2, '0');
+            const minutesStr = String(now.getMinutes()).padStart(2, '0');
+            const secondsStr = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('digital-clock').textContent = `${hoursStr}:${minutesStr}:${secondsStr}`;
+
+            // 아날로그 시계
+            const h = now.getHours();
+            const m = now.getMinutes();
+            const s = now.getSeconds();
+
+            // 시침: 한 시간당 30도, 1분당 0.5도 이동
+            const hDeg = (h % 12) * 30 + m * 0.5;
+            // 분침: 1분당 6도, 1초당 0.1도 이동 (부드러운 움직임을 원하면 추가, 여기선 분 단위만)
+            const mDeg = m * 6 + s * 0.1; 
+            // 초침: 1초당 6도
+            const sDeg = s * 6;
+
+            document.getElementById('hour-hand').style.transform = `rotate(${hDeg}deg)`;
+            document.getElementById('minute-hand').style.transform = `rotate(${mDeg}deg)`;
+            document.getElementById('second-hand').style.transform = `rotate(${sDeg}deg)`;
         }
 
         setInterval(updateClock, 1000);
-        updateClock(); // Initial call to display time immediately
+        updateClock(); 
     </script>
 </body>
 </html>
